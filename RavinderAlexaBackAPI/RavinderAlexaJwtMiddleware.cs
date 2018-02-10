@@ -1,0 +1,89 @@
+﻿using Alexa.NET.Request;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
+using RavinderAlexaBackAPI;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+// THis is just a Shell and will need to be used when we integrate for the authentication. 
+// That is my next step in enhancment 
+namespace RavinderAlexaBackAPI
+{//  THis class is supposed to take the token from the body and pass it in the header so azure can then authenticate it.
+    public class RavinderAlexaJwtMiddleware
+    {
+
+
+        private readonly RequestDelegate _next;
+
+        public RavinderAlexaJwtMiddleware(RequestDelegate next)
+        {
+            _next = next;
+        }
+
+        public async Task Invoke(HttpContext context)
+        {
+            if (context.Request.Headers.Keys.Contains("Authorization"))
+            {
+                await _next(context);
+                return;
+            }
+
+            // Keep the original stream in a separate
+            // variable to restore it later if necessary.
+            var stream = context.Request.Body;
+
+            // Optimization: don't buffer the request if
+            // there was no stream or if it is rewindable.
+            if (stream == Stream.Null || stream.CanSeek)
+            {
+                await _next(context);
+                return;
+            }
+
+            try
+            {
+                using (var buffer = new MemoryStream())
+                {
+                    // Copy the request stream to the memory stream.
+                    await stream.CopyToAsync(buffer);
+                    byte[] bodyBuffer = new byte[buffer.Length];
+                    buffer.Position = 0L;
+                    buffer.Read(bodyBuffer, 0, bodyBuffer.Length);
+                    string body = Encoding.UTF8.GetString(bodyBuffer);
+
+                    if (!string.IsNullOrEmpty(body))
+                    {
+                        SkillRequest request = JsonConvert.DeserializeObject<SkillRequest>(body);
+                        if (request.Session.User.AccessToken != null)
+                        {
+                            context.Request.HttpContext.Request.Headers["Authorization"] = $"Bearer {request.Session.User.AccessToken}";
+                        }
+                    }
+
+                    // Rewind the memory stream.
+                    buffer.Position = 0L;
+
+                    // Replace the request stream by the memory stream.
+                    context.Request.Body = buffer;
+
+                    // Invoke the rest of the pipeline.
+                    await _next(context);
+                }
+            }
+            finally
+            {
+                // Restore the original stream.
+                context.Request.Body = stream;
+            }
+        }
+    }
+}
+// Extension method used to add the middleware to the HTTP request pipeline.
+public static class RavinderAlexaJWTMiddlewareExtensions
+{
+    public static IApplicationBuilder UseAlexaJWTMiddleware(this IApplicationBuilder builder) => builder.UseMiddleware<RavinderAlexaJwtMiddleware>();
+}
