@@ -1,0 +1,39 @@
+// THis is the Code to be added to Intreaction Model 
+
+{
+  "intents": [
+    {
+      "slots": [
+        {
+          "name": "Item",
+          "type": "MyList"
+        }
+      ],
+      "intent": "RecipeIngredients"
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.StopIntent"
+    }
+  ]
+}
+
+
+
+// The Custom Slot types for My List will be 
+
+Bread
+Cookie
+Tortia
+Biryani
+Sandwich
+
+
+// The Code for the Sample Utterances 
+
+RecipeIngredients what are the ingredients for {Item}
+RecipeIngredients ingredients for {Item}
+RecipeIngredients give me the ingredients for {Item}
+RecipeIngredients {Item} ingredients
