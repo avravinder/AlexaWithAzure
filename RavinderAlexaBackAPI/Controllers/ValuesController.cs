@@ -49,7 +49,7 @@ namespace RavinderAlexaBackAPI.Controllers
                 }
                 else
                 {
-                    outputSpeech.Text = " I am not an expert at cooking " + Item + " but i am learning. Will let you know in a few Hours. ";
+                    outputSpeech.Text = " I am not an expert at cooking " + Item + " but i am learning. Will let you know in a few Hours.";
 
                 }
 
